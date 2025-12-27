@@ -1,10 +1,10 @@
 {
-  "name": "thedotmack",
+  "name": "ExactDoug",
   "owner": {
-    "name": "Alex Newman"
+    "name": "Doug Mortensen"
   },
   "metadata": {
-    "description": "Plugins by Alex Newman (thedotmack)",
+    "description": "Plugins by Alex Newman (thedotmack). Forked by Doug for change control.",
     "homepage": "https://github.com/thedotmack/claude-mem"
   },
   "plugins": [
