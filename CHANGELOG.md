@@ -1,8 +1,637 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to claude-mem.
 
-## v8.2.2
+## [v9.0.0] - 2026-01-06
+
+## 🚀 Live Context System
+
+Version 9.0.0 introduces the **Live Context System** - a major new capability that provides folder-level activity context through auto-generated CLAUDE.md files.
+
+### ✨ New Features
+
+#### Live Context System
+- **Folder CLAUDE.md Files**: Each directory now gets an auto-generated CLAUDE.md file containing a chronological timeline of recent development activity
+- **Activity Timelines**: Tables show observation ID, time, type, title, and estimated token cost for relevant work in each folder
+- **Worktree Support**: Proper detection of git worktrees with project-aware filtering to show only relevant observations per worktree
+- **Configurable Limits**: Control observation count via `CLAUDE_MEM_CONTEXT_OBSERVATIONS` setting
+
+#### Modular Architecture Refactor
+- **Service Layer Decomposition**: Major refactoring from monolithic worker-service to modular domain services
+- **SQLite Module Extraction**: Database operations split into dedicated modules (observations, sessions, summaries, prompts, timeline)
+- **Context Builder System**: New modular context generation with TimelineRenderer, FooterRenderer, and ObservationCompiler
+- **Error Handler Centralization**: Unified Express error handling via ErrorHandler module
+
+#### SDK Agent Improvements
+- **Session Resume**: Memory sessions can now resume across Claude conversations using SDK session IDs
+- **Memory Session ID Tracking**: Proper separation of content session IDs from memory session IDs
+- **Response Processor Refactor**: Cleaner message handling and observation extraction
+
+### 🔧 Improvements
+
+#### Windows Stability
+- Fixed Windows PowerShell variable escaping in hook execution
+- Improved IPC detection for Windows managed mode
+- Better PATH handling for Bun and uv on Windows
+
+#### Settings & Configuration
+- **Auto-Creation**: Settings file automatically created with defaults on first run
+- **Worker Host Configuration**: `CLAUDE_MEM_WORKER_HOST` setting for custom worker endpoints
+- Settings validation with helpful error messages
+
+#### MCP Tools
+- Standardized naming: "MCP tools" terminology instead of "mem-search skill"
+- Improved tool descriptions for better Claude integration
+- Context injection API now supports worktree parameter
+
+### 📚 Documentation
+- New **Folder Context Files** documentation page
+- **Worktree Support** section explaining git worktree behavior
+- Updated architecture documentation reflecting modular refactor
+- v9.0 release notes in introduction page
+
+### 🐛 Bug Fixes
+- Fixed stale session resume crash when SDK session is orphaned
+- Fixed logger serialization bug causing silent ChromaSync failures
+- Fixed CLAUDE.md path resolution in worktree environments
+- Fixed date preservation in folder timeline generation
+- Fixed foreign key constraint issues in observation storage
+- Resolved multiple TypeScript type errors across codebase
+
+### 🗑️ Removed
+- Deprecated context-generator.ts (functionality moved to modular system)
+- Obsolete queue analysis documents
+- Legacy worker wrapper scripts
+
+---
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.5.10...v9.0.0
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v8.5.10] - 2026-01-06
+
+## Bug Fixes
+
+- **#545**: Fixed `formatTool` crash when parsing non-JSON tool inputs (e.g., raw Bash commands)
+- **#544**: Fixed terminology in context hints - changed "mem-search skill" to "MCP tools"
+- **#557**: Settings file now auto-creates with defaults on first run (no more "module loader" errors)
+- **#543**: Fixed hook execution by switching runtime from `node` to `bun` (resolves `bun:sqlite` issues)
+
+## Code Quality
+
+- Fixed circular dependency between Logger and SettingsDefaultsManager
+- Added 72 integration tests for critical coverage gaps
+- Cleaned up mock-heavy tests causing module cache pollution
+
+## Full Changelog
+
+See PR #558 for complete details and diagnostic reports.
+
+## [v8.5.9] - 2026-01-04
+
+## What's New
+
+### Context Header Timestamp
+
+The context injection header now displays the current date and time, making it easier to understand when context was generated.
+
+**Example:** `[claude-mem] recent context, 2026-01-04 2:46am EST`
+
+This appears in both terminal (colored) output and markdown format, including empty state messages.
+
+---
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.5.8...v8.5.9
+
+## [v8.5.8] - 2026-01-04
+
+## Bug Fixes
+
+- **#511**: Add `gemini-3-flash` model to GeminiAgent with proper rate limits and validation
+- **#517**: Fix Windows process management by replacing PowerShell with WMIC (fixes Git Bash/WSL compatibility)
+- **#527**: Add Apple Silicon Homebrew paths (`/opt/homebrew/bin`) for `bun` and `uv` detection
+- **#531**: Remove duplicate type definitions from `export-memories.ts` using shared bridge file
+
+## Tests
+
+- Added regression tests for PR #542 covering Gemini model support, WMIC parsing, Apple Silicon paths, and export type refactoring
+
+## Documentation
+
+- Added detailed analysis reports for GitHub issues #511, #514, #517, #520, #527, #531, #532
+
+## [v8.5.7] - 2026-01-04
+
+## Modular Architecture Refactor
+
+This release refactors the monolithic service architecture into focused, single-responsibility modules with comprehensive test coverage.
+
+### Architecture Improvements
+
+- **SQLite Repositories** (`src/services/sqlite/`) - Modular repositories for sessions, observations, prompts, summaries, and timeline
+- **Worker Agents** (`src/services/worker/agents/`) - Extracted response processing, error handling, and session cleanup
+- **Search Strategies** (`src/services/worker/search/`) - Modular search with Chroma, SQLite, and Hybrid strategies plus orchestrator
+- **Context Generation** (`src/services/context/`) - Separated context building, token calculation, formatters, and renderers
+- **Infrastructure** (`src/services/infrastructure/`) - Graceful shutdown, health monitoring, and process management
+- **Server** (`src/services/server/`) - Express server setup, middleware, and error handling
+
+### Test Coverage
+
+- **595 tests** across 36 test files
+- **1,120 expect() assertions**
+- Coverage for SQLite repos, worker agents, search, context, infrastructure, and server modules
+
+### Session ID Refactor
+
+- Aligned tests with NULL-based memory session initialization pattern
+- Updated `SESSION_ID_ARCHITECTURE.md` documentation
+
+### Other Improvements
+
+- Added missing logger imports to 34 files for better observability
+- Updated esbuild and MCP SDK to latest versions
+- Removed `bun.lock` from version control
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.5.6...v8.5.7
+
+## [v8.5.6] - 2026-01-04
+
+## Major Architectural Refactoring
+
+Decomposes monolithic services into modular, maintainable components:
+
+### Worker Service
+Extracted infrastructure (GracefulShutdown, HealthMonitor, ProcessManager), server layer (ErrorHandler, Middleware, Server), and integrations (CursorHooksInstaller)
+
+### Context Generator
+Split into ContextBuilder, ContextConfigLoader, ObservationCompiler, TokenCalculator, formatters (Color/Markdown), and section renderers (Header/Footer/Summary/Timeline)
+
+### Search System
+Extracted SearchOrchestrator, ResultFormatter, TimelineBuilder, and strategy pattern (Chroma/SQLite/Hybrid search strategies) with dedicated filters (Date/Project/Type)
+
+### Agent System
+Extracted shared logic into ResponseProcessor, ObservationBroadcaster, FallbackErrorHandler, and SessionCleanupHelper
+
+### SQLite Layer
+Decomposed SessionStore into domain modules (observations, prompts, sessions, summaries, timeline) with proper type exports
+
+## Bug Fixes
+- Fixed duplicate observation storage bug (observations stored multiple times when messages were batched)
+- Added duplicate observation cleanup script for production database remediation
+- Fixed FOREIGN KEY constraint and missing `failed_at_epoch` column issues
+
+## Coming Next
+Comprehensive test suite in a new PR, targeting **v8.6.0**
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v8.5.5] - 2026-01-03
+
+## Improved Error Handling and Logging
+
+This patch release enhances error handling and logging across all worker services for better debugging and reliability.
+
+### Changes
+- **Enhanced Error Logging**: Improved error context across SessionStore, SearchManager, SDKAgent, GeminiAgent, and OpenRouterAgent
+- **SearchManager**: Restored error handling for Chroma calls with improved logging
+- **SessionStore**: Enhanced error logging throughout database operations
+- **Bug Fix**: Fixed critical bug where `memory_session_id` could incorrectly equal `content_session_id`
+- **Hooks**: Streamlined error handling and loading states for better maintainability
+
+### Investigation Reports
+- Added detailed analysis documents for generator failures and observation duplication regressions
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.5.4...v8.5.5
+
+## [v8.5.4] - 2026-01-02
+
+## Bug Fixes
+
+### Chroma Connection Error Handling
+Fixed a critical bug in ChromaSync where connection-related errors were misinterpreted as missing collections. The `ensureCollection()` method previously caught ALL errors and assumed they meant the collection doesn't exist, which caused connection errors to trigger unnecessary collection creation attempts. Now connection-related errors like "Not connected" are properly distinguished and re-thrown immediately, preventing false error handling paths and inappropriate fallback behavior.
+
+### Removed Dead last_user_message Code
+Cleaned up dead code related to `last_user_message` handling in the summary flow. This field was being extracted from transcripts but never used anywhere - in Claude Code transcripts, "user" type messages are mostly tool_results rather than actual user input, and the user's original request is already stored in the user_prompts table. Removing this unused field eliminates confusing warnings like "Missing last_user_message when queueing summary". Changes span summary-hook, SessionRoutes, SessionManager, interface definitions, and all agent implementations.
+
+## Improvements
+
+### Enhanced Error Handling Across Services
+Comprehensive improvement to error handling across 8 core services:
+- **BranchManager** - Now logs recovery checkout failures
+- **PaginationHelper** - Logs when file paths are plain strings instead of valid JSON
+- **SDKAgent** - Enhanced logging for Claude executable detection failures
+- **SearchManager** - Logs plain string handling for files read and edited
+- **paths.ts** - Improved logging for git root detection failures
+- **timeline-formatting** - Enhanced JSON parsing errors with input previews
+- **transcript-parser** - Logs summary of parse errors after processing
+- **ChromaSync** - Logs full error context before attempting collection creation
+
+### Error Handling Documentation & Tooling
+- Created `error-handling-baseline.txt` establishing baseline error handling practices
+- Documented error handling anti-pattern rules in CLAUDE.md
+- Added `detect-error-handling-antipatterns.ts` script to identify empty catch blocks, improper logging practices, and oversized try-catch blocks
+
+## New Features
+
+### Console Filter Bar with Log Parsing
+Implemented interactive log filtering in the viewer UI:
+- **Structured Log Parsing** - Extracts timestamp, level, component, correlation ID, and message content using regex pattern matching
+- **Level Filtering** - Toggle visibility for DEBUG, INFO, WARN, ERROR log levels
+- **Component Filtering** - Filter by 9 component types: HOOK, WORKER, SDK, PARSER, DB, SYSTEM, HTTP, SESSION, CHROMA
+- **Color-Coded Rendering** - Visual distinction with component-specific icons and log level colors
+- **Special Message Detection** - Recognizes markers like → (dataIn), ← (dataOut), ✓ (success), ✗ (failure), ⏱ (timing), [HAPPY-PATH]
+- **Smart Auto-Scroll** - Maintains scroll position when reviewing older logs
+- **Responsive Design** - Filter bar adapts to smaller screens
+
+## [v8.5.3] - 2026-01-02
+
+# 🛡️ Error Handling Hardening & Developer Tools
+
+Version 8.5.3 introduces comprehensive error handling improvements that prevent silent failures and reduce debugging time from hours to minutes. This release also adds new developer tools for queue management and log monitoring.
+
+---
+
+## 🔴 Critical Error Handling Improvements
+
+### The Problem
+A single overly-broad try-catch block caused a **10-hour debugging session** by silently swallowing errors. This pattern was pervasive throughout the codebase, creating invisible failure modes.
+
+### The Solution
+
+**Automated Anti-Pattern Detection** (`scripts/detect-error-handling-antipatterns.ts`)
+- Detects 7 categories of error handling anti-patterns
+- Enforces zero-tolerance policy for empty catch blocks
+- Identifies large try-catch blocks (>10 lines) that mask specific errors
+- Flags missing error logging that causes silent failures
+- Supports approved overrides with justification comments
+- Exit code 1 if critical issues detected (enforceable in CI)
+
+**New Error Handling Standards** (Added to `CLAUDE.md`)
+- **5-Question Pre-Flight Checklist**: Required before writing any try-catch
+  1. What SPECIFIC error am I catching?
+  2. Show documentation proving this error can occur
+  3. Why can't this error be prevented?
+  4. What will the catch block DO?
+  5. Why shouldn't this error propagate?
+- **Forbidden Patterns**: Empty catch, catch without logging, large try blocks, promise catch without handlers
+- **Allowed Patterns**: Specific errors, logged failures, minimal scope, explicit recovery
+- **Meta-Rule**: Uncertainty triggers research, NOT try-catch
+
+### Fixes Applied
+
+**Wave 1: Empty Catch Blocks** (5 files)
+- `import-xml-observations.ts` - Log skipped invalid JSON
+- `bun-path.ts` - Log when bun not in PATH
+- `cursor-utils.ts` - Log failed registry reads & corrupt MCP config
+- `worker-utils.ts` - Log failed health checks
+
+**Wave 2: Promise Catches on Critical Paths** (8 locations)
+- `worker-service.ts` - Background initialization failures
+- `SDKAgent.ts` - Session processor errors (2 locations)
+- `GeminiAgent.ts` - Finalization failures (2 locations)
+- `OpenRouterAgent.ts` - Finalization failures (2 locations)
+- `SessionManager.ts` - Generator promise failures
+
+**Wave 3: Comprehensive Audit** (29 catch blocks)
+- Added logging to 16 catch blocks (UI, servers, worker, routes, services)
+- Documented 13 intentional exceptions with justification comments
+- All patterns now follow error handling guidelines with appropriate log levels
+
+### Approved Override System
+
+For justified exceptions (performance-critical paths, expected failures), use:
+```typescript
+// [APPROVED OVERRIDE]: Brief technical justification
+try {
+  // code
+} catch {
+  // allowed exception
+}
+```
+
+**Progress**: 163 anti-patterns → 26 approved overrides (84% reduction in silent failures)
+
+---
+
+## 🗂️ Queue Management Features
+
+**New Commands**
+- `npm run queue:clear` - Interactive removal of failed messages
+- `npm run queue:clear -- --all` - Clear all messages (pending, processing, failed)
+- `npm run queue:clear -- --force` - Non-interactive mode
+
+**HTTP API Endpoints**
+- `DELETE /api/pending-queue/failed` - Remove failed messages
+- `DELETE /api/pending-queue/all` - Complete queue reset
+
+Failed messages exceed max retry count and remain for debugging. These commands provide clean queue maintenance.
+
+---
+
+## 🪵 Developer Console (Chrome DevTools Style)
+
+**UI Improvements**
+- Bottom drawer console (slides up from bottom-left corner)
+- Draggable resize handle for height adjustment
+- Auto-refresh toggle (2s interval)
+- Clear logs button with confirmation
+- Monospace font (SF Mono/Monaco/Consolas)
+- Minimum height: 150px, adjustable to window height - 100px
+
+**API Endpoints**
+- `GET /api/logs` - Fetch last 1000 lines of current day's log
+- `DELETE /api/logs` - Clear current log file
+
+Logs viewer accessible via floating console button in UI.
+
+---
+
+## 📚 Architecture Documentation
+
+**Session ID Architecture** (`docs/SESSION_ID_ARCHITECTURE.md`)
+- Comprehensive documentation of 1:1 session mapping guarantees
+- 19 validation tests proving UNIQUE constraints and resume consistency
+- Documents single-transition vulnerability (application-level enforcement)
+- Complete reference for session lifecycle management
+
+---
+
+## 📊 Impact Summary
+
+- **Debugging Time**: 10 hours → minutes (proper error visibility)
+- **Test Coverage**: +19 critical architecture validation tests
+- **Silent Failures**: 84% reduction (163 → 26 approved exceptions)
+- **Protection**: Automated detection prevents regression
+- **Developer UX**: Console logs, queue management, comprehensive docs
+
+---
+
+## 🔧 Technical Details
+
+**Files Changed**: 25+ files across error handling, queue management, UI, and documentation
+
+**Critical Path Protection**
+These files now have strict error propagation (no catch-and-continue):
+- `SDKAgent.ts`
+- `GeminiAgent.ts`
+- `OpenRouterAgent.ts`
+- `SessionStore.ts`
+- `worker-service.ts`
+
+**Build Verification**: All changes tested, build successful
+
+---
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.5.2...v8.5.3
+
+## [v8.5.2] - 2025-12-31
+
+## Bug Fixes
+
+### Fixed SDK Agent Memory Leak (#499)
+
+Fixed a critical memory leak where Claude SDK child processes were never terminated after sessions completed. Over extended usage, this caused hundreds of orphaned processes consuming 40GB+ of RAM.
+
+**Root Cause:**
+- When the SDK agent generator completed naturally (no more messages to process), the `AbortController` was never aborted
+- Child processes spawned by the Agent SDK remained running indefinitely
+- Sessions stayed in memory (by design for future events) but underlying processes were never cleaned up
+
+**Fix:**
+- Added proper cleanup to SessionRoutes finally block
+- Now calls `abortController.abort()` when generator completes with no pending work
+- Creates new `AbortController` when crash recovery restarts generators
+- Ensures cleanup happens even if recovery logic fails
+
+**Impact:**
+- Prevents orphaned `claude` processes from accumulating
+- Eliminates multi-gigabyte memory leaks during normal usage
+- Maintains crash recovery functionality with proper resource cleanup
+
+Thanks to @yonnock for the detailed bug report and investigation in #499!
+
+## [v8.5.1] - 2025-12-30
+
+## Bug Fix
+
+**Fixed**: Migration 17 column rename failing for databases in intermediate states (#481)
+
+### Problem
+Migration 17 renamed session ID columns but used a single check to determine if ALL tables were migrated. This caused errors for databases in partial migration states:
+- `no such column: sdk_session_id` (when columns already renamed)
+- `table observations has no column named memory_session_id` (when not renamed)
+
+### Solution
+- Rewrote migration 17 to check **each table individually** before renaming
+- Added `safeRenameColumn()` helper that handles all edge cases gracefully
+- Handles all database states: fresh, old, and partially migrated
+
+### Who was affected
+- Users upgrading from pre-v8.2.6 versions
+- Users whose migration was interrupted (crash, restart, etc.)
+- Users who restored database from backup
+
+---
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v8.5.0] - 2025-12-30
+
+# Cursor Support Now Available 🎉
+
+This is a major release introducing **full Cursor IDE support**. Claude-mem now works with Cursor, bringing persistent AI memory to Cursor users with or without a Claude Code subscription.
+
+## Highlights
+
+**Give Cursor persistent memory.** Every Cursor session starts fresh - your AI doesn't remember what it worked on yesterday. Claude-mem changes that. Your agent builds cumulative knowledge about your codebase, decisions, and patterns over time.
+
+### Works Without Claude Code
+
+You can now use claude-mem with Cursor using free AI providers:
+- **Gemini** (recommended): 1,500 free requests/day, no credit card required
+- **OpenRouter**: Access to 100+ models including free options
+- **Claude SDK**: For Claude Code subscribers
+
+### Cross-Platform Support
+
+Full support for all major platforms:
+- **macOS**: Bash scripts with `jq` and `curl`
+- **Linux**: Same toolchain as macOS
+- **Windows**: Native PowerShell scripts, no WSL required
+
+## New Features
+
+### Interactive Setup Wizard (`bun run cursor:setup`)
+A guided installer that:
+- Detects your environment (Claude Code present or not)
+- Helps you choose and configure an AI provider
+- Installs Cursor hooks automatically
+- Starts the worker service
+- Verifies everything is working
+
+### Cursor Lifecycle Hooks
+Complete hook integration with Cursor's native hook system:
+- `session-init.sh/.ps1` - Session start with context injection
+- `user-message.sh/.ps1` - User prompt capture
+- `save-observation.sh/.ps1` - Tool usage logging
+- `save-file-edit.sh/.ps1` - File edit tracking
+- `session-summary.sh/.ps1` - Session end summary
+- `context-inject.sh/.ps1` - Load relevant history
+
+### Context Injection via `.cursor/rules`
+Relevant past context is automatically injected into Cursor sessions via the `.cursor/rules/claude-mem-context.mdc` file, giving your AI immediate awareness of prior work.
+
+### Project Registry
+Multi-project support with automatic project detection:
+- Projects registered in `~/.claude-mem/cursor-projects.json`
+- Context automatically scoped to current project
+- Works across multiple workspaces simultaneously
+
+### MCP Search Tools
+Full MCP server integration for Cursor:
+- `search` - Find observations by query, date, type
+- `timeline` - Get context around specific observations
+- `get_observations` - Fetch full details for filtered IDs
+
+## New Commands
+
+| Command | Description |
+|---------|-------------|
+| `bun run cursor:setup` | Interactive setup wizard |
+| `bun run cursor:install` | Install Cursor hooks |
+| `bun run cursor:uninstall` | Remove Cursor hooks |
+| `bun run cursor:status` | Check hook installation status |
+
+## Documentation
+
+Full documentation available at [docs.claude-mem.ai/cursor](https://docs.claude-mem.ai/cursor):
+- Cursor Integration Overview
+- Gemini Setup Guide (free tier)
+- OpenRouter Setup Guide
+- Troubleshooting
+
+## Getting Started
+
+### For Cursor-Only Users (No Claude Code)
+
+```bash
+git clone https://github.com/thedotmack/claude-mem.git
+cd claude-mem && bun install && bun run build
+bun run cursor:setup
+```
+
+### For Claude Code Users
+
+```bash
+/plugin marketplace add thedotmack/claude-mem
+/plugin install claude-mem
+claude-mem cursor install
+```
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.2.10...v8.5.0
+
+## [v8.2.10] - 2025-12-30
+
+## Bug Fixes
+
+- **Auto-restart worker on version mismatch** (#484): When the plugin updates but the worker was already running on the old version, the worker now automatically restarts instead of failing with 400 errors.
+
+### Changes
+- `/api/version` endpoint now returns the built-in version (compiled at build time) instead of reading from disk
+- `worker-service start` command checks for version mismatch and auto-restarts if needed
+- Downgraded hook version mismatch warning to debug logging (now handled by auto-restart)
+
+Thanks @yungweng for the detailed bug report!
+
+## [v8.2.9] - 2025-12-29
+
+## Bug Fixes
+
+- **Worker Service**: Remove file-based locking and improve Windows stability
+  - Replaced file-based locking with health-check-first approach for cleaner mutual exclusion
+  - Removed AbortSignal.timeout() calls to reduce Bun libuv assertion errors on Windows
+  - Added 500ms shutdown delays on Windows to prevent zombie ports
+  - Reduced hook timeout values for improved responsiveness
+  - Increased worker readiness polling duration from 5s to 15s
+
+## Internal Changes
+
+- Updated worker CLI scripts to reference worker-service.cjs directly
+- Simplified hook command configurations
+
+## [v8.2.8] - 2025-12-29
+
+## Bug Fixes
+
+- Fixed orphaned chroma-mcp processes during shutdown (#489)
+  - Added graceful shutdown handling with signal handlers registered early in WorkerService lifecycle
+  - Ensures ChromaSync subprocess cleanup even when interrupted during initialization
+  - Removes PID file during shutdown to prevent stale process tracking
+
+## Technical Details
+
+This patch release addresses a race condition where SIGTERM/SIGINT signals arriving during ChromaSync initialization could leave orphaned chroma-mcp processes. The fix moves signal handler registration from the start() method to the constructor, ensuring cleanup handlers exist throughout the entire initialization lifecycle.
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.2.7...v8.2.8
+
+## [v8.2.7] - 2025-12-29
+
+## What's Changed
+
+### Token Optimizations
+- Simplified MCP server tool definitions for reduced token usage
+- Removed outdated troubleshooting and mem-search skill documentation
+- Enhanced search parameter descriptions for better clarity
+- Streamlined MCP workflows for improved efficiency
+
+This release significantly reduces the token footprint of the plugin's MCP tools and documentation.
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.2.6...v8.2.7
+
+## [v8.2.6] - 2025-12-29
+
+## What's Changed
+
+### Bug Fixes & Improvements
+- Session ID semantic renaming for clarity (content_session_id, memory_session_id)
+- Queue system simplification with unified processing logic
+- Memory session ID capture for agent resume functionality
+- Comprehensive test suite for session ID refactoring
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.2.5...v8.2.6
+
+## [v8.2.5] - 2025-12-28
+
+## Bug Fixes
+
+- **Logger**: Enhanced Error object handling in debug mode to prevent empty JSON serialization
+- **ChromaSync**: Refactored DatabaseManager to initialize ChromaSync lazily, removing background backfill on startup
+- **SessionManager**: Simplified message handling and removed linger timeout that was blocking completion
+
+## Technical Details
+
+This patch release addresses several issues discovered after the session continuity fix:
+
+1. Logger now properly serializes Error objects with stack traces in debug mode
+2. ChromaSync initialization is now lazy to prevent silent failures during startup
+3. Session linger timeout removed to eliminate artificial 5-second delays on session completion
+
+Full changelog: https://github.com/thedotmack/claude-mem/compare/v8.2.4...v8.2.5
+
+## [v8.2.4] - 2025-12-28
+
+Patch release v8.2.4
+
+## [v8.2.3] - 2025-12-27
+
+## Bug Fixes
+
+- Fix worker port environment variable in smart-install script
+- Implement file-based locking mechanism for worker operations to prevent race conditions
+- Fix restart command references in documentation (changed from `claude-mem restart` to `npm run worker:restart`)
+
+## [v8.2.2] - 2025-12-27
 
 ## What's Changed
 
@@ -25,7 +654,7 @@ All notable changes to this project will be documented in this file.
 - Update hooks.json to use worker-service.cjs CLI
 - Add comprehensive tests for hook constants and worker spawn functionality
 
-## v8.2.1
+## [v8.2.1] - 2025-12-27
 
 ## 🔧 Worker Lifecycle Hardening
 
@@ -90,7 +719,7 @@ Added comprehensive test suites:
 
 **Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.2.0...v8.2.1
 
-## v8.2.0
+## [v8.2.0] - 2025-12-26
 
 ## 🚀 Gemini API as Alternative AI Provider
 
@@ -148,7 +777,7 @@ Huge thanks to **Alexander Knigge** ([@AlexanderKnigge](https://x.com/AlexanderK
 
 **Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v8.1.0...v8.2.0
 
-## v8.1.0
+## [v8.1.0] - 2025-12-25
 
 ## The 3-Month Battle Against Complexity
 
@@ -244,7 +873,7 @@ Since we're now explicit about recovery instead of silently papering over proble
 
 *The evidence: Observations #3646, #6738, #7598, #12860, #12866, #13046, #15259, #20995, #21055, #30524, #31080, #32114, #32116, #32125, #32126, #32127, #32146, #32324—the complete record of a 3-month battle.*
 
-## v8.0.6
+## [v8.0.6] - 2025-12-24
 
 ## Bug Fixes
 
@@ -252,7 +881,7 @@ Since we're now explicit about recovery instead of silently papering over proble
 
 This patch release improves stability by adding proper error handling to Chroma vector database sync operations, preventing worker crashes when sync operations timeout.
 
-## v8.0.5
+## [v8.0.5] - 2025-12-24
 
 ## Bug Fixes
 
@@ -262,7 +891,7 @@ This patch release improves stability by adding proper error handling to Chroma 
 
 Refactored context loading logic to differentiate between code and non-code modes, resolving issues where mode-specific observations were filtered by stale settings.
 
-## v8.0.4
+## [v8.0.4] - 2025-12-23
 
 ## Changes
 
@@ -270,11 +899,11 @@ Refactored context loading logic to differentiate between code and non-code mode
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-## v8.0.3
+## [v8.0.3] - 2025-12-23
 
 Fix critical worker crashes on startup (v8.0.2 regression)
 
-## v8.0.2
+## [v8.0.2] - 2025-12-23
 
 New "chill" remix of code mode for users who want fewer, more selective observations.
 
@@ -299,7 +928,7 @@ Set in ~/.claude-mem/settings.json:
 }
 ```
 
-## v8.0.1
+## [v8.0.1] - 2025-12-23
 
 ## 🎨 UI Improvements
 
@@ -311,7 +940,7 @@ Set in ~/.claude-mem/settings.json:
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-## v8.0.0
+## [v8.0.0] - 2025-12-23
 
 ## 🌍 Major Features
 
@@ -355,4 +984,283 @@ Set in ~/.claude-mem/settings.json:
 
 **Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.4.5...v8.0.0
 **View PR**: https://github.com/thedotmack/claude-mem/pull/412
+
+## [v7.4.5] - 2025-12-21
+
+## Bug Fixes
+
+- Fix missing `formatDateTime` import in SearchManager that broke `get_context_timeline` mem-search function
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v7.4.4] - 2025-12-21
+
+## What's Changed
+
+* Code quality: comprehensive nonsense audit cleanup (20 issues) by @thedotmack in #400
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.4.3...v7.4.4
+
+## [v7.4.3] - 2025-12-20
+
+Added Discord notification script for release announcements.
+
+### Added
+- `scripts/discord-release-notify.js` - Posts formatted release notifications to Discord using webhook URL from `.env`
+- `npm run discord:notify <version>` - New npm script to trigger Discord notifications
+- Updated version-bump skill workflow to include Discord notification step
+
+### Configuration
+Set `DISCORD_UPDATES_WEBHOOK` in your `.env` file to enable release notifications.
+
+---
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v7.4.2] - 2025-12-20
+
+Patch release v7.4.2
+
+## Changes
+- Refactored worker commands from npm scripts to claude-mem CLI
+- Added path alias script
+- Fixed Windows worker stop/restart reliability (#395)
+- Simplified build commands section in CLAUDE.md
+
+## [v7.4.1] - 2025-12-19
+
+## Bug Fixes
+
+- **MCP Server**: Redirect logs to stderr to preserve JSON-RPC protocol (#396)
+  - MCP uses stdio transport where stdout is reserved for JSON-RPC messages
+  - Console.log was writing startup logs to stdout, causing Claude Desktop to parse log lines as JSON and fail
+
+## [v7.4.0] - 2025-12-18
+
+## What's New
+
+### MCP Tool Token Reduction
+
+Optimized MCP tool definitions for reduced token consumption in Claude Code sessions through progressive parameter disclosure.
+
+**Changes:**
+- Streamlined MCP tool schemas with minimal inline definitions
+- Added `get_schema()` tool for on-demand parameter documentation
+- Enhanced worker API with operation-based instruction loading
+
+This release improves session efficiency by reducing the token overhead of MCP tool definitions while maintaining full functionality through progressive disclosure.
+
+---
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v7.3.9] - 2025-12-18
+
+## Fixes
+
+- Fix MCP server compatibility and web UI path resolution
+
+This patch release addresses compatibility issues with the MCP server and resolves path resolution problems in the web UI.
+
+## [v7.3.8] - 2025-12-18
+
+## Security Fix
+
+Added localhost-only protection for admin endpoints to prevent DoS attacks when worker service is bound to 0.0.0.0 for remote UI access.
+
+### Changes
+- Created `requireLocalhost` middleware to restrict admin endpoints
+- Applied to `/api/admin/restart` and `/api/admin/shutdown`
+- Returns 403 Forbidden for non-localhost requests
+
+### Security Impact
+Prevents unauthorized shutdown/restart of worker service when exposed on network.
+
+Fixes security concern raised in #368.
+
+## [v7.3.7] - 2025-12-17
+
+## Windows Platform Stabilization
+
+This patch release includes comprehensive improvements for Windows platform stability and reliability.
+
+### Key Improvements
+
+- **Worker Readiness Tracking**: Added `/api/readiness` endpoint with MCP/SDK initialization flags to prevent premature connection attempts
+- **Process Tree Cleanup**: Implemented recursive process enumeration on Windows to prevent zombie socket processes  
+- **Bun Runtime Migration**: Migrated worker wrapper from Node.js to Bun for consistency and reliability
+- **Centralized Project Name Utility**: Consolidated duplicate project name extraction logic with Windows drive root handling
+- **Enhanced Error Messages**: Added platform-aware logging and detailed Windows troubleshooting guidance
+- **Subprocess Console Hiding**: Standardized `windowsHide: true` across all child process spawns to prevent console window flashing
+
+### Technical Details
+
+- Worker service tracks MCP and SDK readiness states separately
+- ChromaSync service properly tracks subprocess PIDs for Windows cleanup
+- Worker wrapper uses Bun runtime with enhanced socket cleanup via process tree enumeration
+- Increased timeouts on Windows platform (30s worker startup, 10s hook timeouts)
+- Logger utility includes platform and PID information for better debugging
+
+This represents a major reliability improvement for Windows users, eliminating common issues with worker startup failures, orphaned processes, and zombie sockets.
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.3.6...v7.3.7
+
+## [v7.3.6] - 2025-12-17
+
+## Bug Fixes
+
+- Enhanced SDKAgent response handling and message processing
+
+## [v7.3.5] - 2025-12-17
+
+## What's Changed
+* fix(windows): solve zombie port problem with wrapper architecture by @ToxMox in https://github.com/thedotmack/claude-mem/pull/372
+* chore: bump version to 7.3.5 by @thedotmack in https://github.com/thedotmack/claude-mem/pull/375
+
+## New Contributors
+* @ToxMox made their first contribution in https://github.com/thedotmack/claude-mem/pull/372
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.3.4...v7.3.5
+
+## [v7.3.4] - 2025-12-17
+
+Patch release for bug fixes and minor improvements
+
+## [v7.3.3] - 2025-12-16
+
+## What's Changed
+
+- Remove all better-sqlite3 references from codebase (#357)
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.3.2...v7.3.3
+
+## [v7.3.2] - 2025-12-16
+
+## 🪟 Windows Console Fix
+
+Fixes blank console windows appearing for Windows 11 users during claude-mem operations.
+
+### What Changed
+
+- **Windows**: Uses PowerShell `Start-Process -WindowStyle Hidden` to properly hide worker process
+- **Security**: Added PowerShell string escaping to follow security best practices
+- **Unix/Mac**: No changes (continues to work as before)
+
+### Root Cause
+
+The issue was caused by a Node.js limitation where `windowsHide: true` doesn't work with `detached: true` in `child_process.spawn()`. This affects both Bun and Node.js since Bun inherits Node.js process spawning semantics.
+
+See: https://github.com/nodejs/node/issues/21825
+
+### Security Note
+
+While all paths in the PowerShell command are application-controlled (not user input), we've added proper escaping to follow security best practices. If an attacker could modify bun installation paths or plugin directories, they would already have full filesystem access including the database.
+
+### Related
+
+- Fixes #304 (Multiple visible console windows)
+- Merged PR #339
+- Testing documented in PR #315
+
+### Breaking Changes
+
+None - fully backward compatible.
+
+---
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.3.1...v7.3.2
+
+## [v7.3.1] - 2025-12-16
+
+## 🐛 Bug Fixes
+
+### Pending Messages Cleanup (Issue #353)
+
+Fixed unbounded database growth in the `pending_messages` table by implementing proper cleanup logic:
+
+- **Content Clearing**: `markProcessed()` now clears `tool_input` and `tool_response` when marking messages as processed, preventing duplicate storage of transcript data that's already saved in observations
+- **Count-Based Retention**: `cleanupProcessed()` now keeps only the 100 most recent processed messages for UI display, deleting older ones automatically
+- **Automatic Cleanup**: Cleanup runs automatically after processing messages in `SDKAgent.processSDKResponse()`
+
+### What This Fixes
+
+- Prevents database from growing unbounded with duplicate transcript content
+- Keeps metadata (tool_name, status, timestamps) for recent messages
+- Maintains UI functionality while optimizing storage
+
+### Technical Details
+
+**Files Modified:**
+- `src/services/sqlite/PendingMessageStore.ts` - Cleanup logic implementation
+- `src/services/worker/SDKAgent.ts` - Periodic cleanup calls
+
+**Database Behavior:**
+- Pending/processing messages: Keep full transcript data (needed for processing)
+- Processed messages: Clear transcript, keep metadata only (observations already saved)
+- Retention: Last 100 processed messages for UI feedback
+
+### Related
+
+- Fixes #353 - Observations not being saved
+- Part of the pending messages persistence feature (from PR #335)
+
+---
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.3.0...v7.3.1
+
+## [v7.3.0] - 2025-12-16
+
+## Features
+
+- **Table-based search output**: Unified timeline formatting with cleaner, more organized presentation of search results grouped by date and file
+- **Simplified API**: Removed unused format parameter from MCP search tools for cleaner interface
+- **Shared formatting utilities**: Extracted common timeline formatting logic into reusable module
+- **Batch observations endpoint**: Added `/api/observations/batch` endpoint for efficient retrieval of multiple observations by ID array
+
+## Changes
+
+- **Default model upgrade**: Changed default model from Haiku to Sonnet for better observation quality
+- **Removed fake URIs**: Replaced claude-mem:// pseudo-protocol with actual HTTP API endpoints for citations
+
+## Bug Fixes
+
+- Fixed undefined debug function calls in MCP server
+- Fixed skillPath variable scoping bug in instructions endpoint
+- Extracted magic numbers to named constants for better code maintainability
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.2.4...v7.3.0
+
+## [v7.2.4] - 2025-12-15
+
+## What's Changed
+
+### Documentation
+- Updated endless mode setup instructions with improved configuration guidance for better user experience
+
+**Full Changelog**: https://github.com/thedotmack/claude-mem/compare/v7.2.3...v7.2.4
+
+## [v7.2.3] - 2025-12-15
+
+## Bug Fixes
+
+- **Fix MCP server failures on plugin updates**: Add 2-second pre-restart delay in `ensureWorkerVersionMatches()` to give files time to sync before killing the old worker. This prevents the race condition where the worker restart happened too quickly after plugin file updates, causing "Worker service connection failed" errors.
+
+## Changes
+
+- Add `PRE_RESTART_SETTLE_DELAY` constant (2000ms) to `hook-constants.ts`
+- Add delay before `ProcessManager.restart()` call in `worker-utils.ts`
+- Fix pre-existing bug where `port` variable was undefined in error logging
+
+---
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## [v7.2.2] - 2025-12-15
+
+## Changes
+
+- **Refactor:** Consolidate mem-search skill, remove desktop-skill duplication
+  - Delete separate `desktop-skill/` directory (was outdated)
+  - Generate `mem-search.zip` during build from `plugin/skills/mem-search/`
+  - Update docs with correct MCP tool list and new download path
+  - Single source of truth for Claude Desktop skill
 
